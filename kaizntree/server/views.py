@@ -1,9 +1,11 @@
+from django.http import HttpResponse
 from django.http import JsonResponse
 from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework import status
-from datetime import datetime
-from rest_framework_simplejwt.views import TokenObtainPairView
+from datetime import datetime, timedelta
+from rest_framework_simplejwt.tokens import AccessToken
+from jwt.exceptions import InvalidTokenError
 
 from .utils import obtain_jwt_tokens
 from .models import User, Category, Tag, Item
@@ -26,10 +28,13 @@ class UserInfoAPIView(APIView):
 
         # Check if the provided password is correct
         if user.validate_password(password):
-            # Password is correct
-            tokens = obtain_jwt_tokens(user)
-            response = JsonResponse({'message': 'Login successful'})
-            response.set_cookie('access_token', tokens['access'], httponly=True)
+            access_token = AccessToken()
+            access_token['user_id'] = user.id
+            access_token['exp'] = access_token.current_time + timedelta(days=7)  # Custom expiration time (e.g., 7 days)
+
+            # Create a response with the access token set as a cookie
+            response = HttpResponse({'message': 'Login successful'})
+            response.set_cookie('access_token', str(access_token), httponly=False)
             return response
         else:
             # Password is incorrect
@@ -57,11 +62,57 @@ class UserRegisterAPIView(APIView):
             user.set_password(valid_data['password'])  # Hash the password
             user.save()
 
-            tokens = obtain_jwt_tokens(user)
-            response = JsonResponse({'message': 'Login successful'})
-            response.set_cookie('access_token', tokens['access'], httponly=True)
+            access_token = AccessToken()
+            access_token['user_id'] = user.id
+            access_token['exp'] = access_token.current_time + timedelta(days=7)  # Custom expiration time (e.g., 7 days)
 
+            # Create a response with the access token set as a cookie
+            response = HttpResponse({'message': 'Login successful'})
+            response.set_cookie('access_token', str(access_token), httponly=False)
             return response
 
 
         return Response({'message': 'server error'},status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+class UserCategoryAPIView(APIView):
+    def get_user_id_from_token(self, request):
+        try:
+            # Extract the JWT token from the request headers
+            authorization_header = request.headers.get('CSRFToken')
+            token = authorization_header.split()[1]  # Extract token from "Bearer <token>"
+            
+            # Decode the JWT token
+            decoded_token = AccessToken(token)
+            user_id = decoded_token['user_id']
+            
+            return user_id
+        except (IndexError, InvalidTokenError, KeyError):
+            # Handle token extraction or decoding errors
+            return None
+
+    def get(self, request):
+         # Ensure that the user_id is present in the JWT token
+        user_id = self.get_user_id_from_token(request)
+        if not user_id:
+            return Response({'error': 'User ID is missing in the JWT token'}, status=status.HTTP_400_BAD_REQUEST)
+
+        # Retrieve categories for the authenticated user
+        queryset = Category.objects.filter(user_id=user_id)
+        serializer = CategorySerializer(queryset, many=True)
+        return Response(serializer.data)
+
+    def post(self, request):
+        user_id = self.get_user_id_from_token(request)
+        if not user_id:
+            return Response({'error': 'User ID is missing in the JWT token'}, status=status.HTTP_400_BAD_REQUEST)
+        category_name = request.data.get('name')
+        queryset = Category.objects.filter(user=user_id, name=category_name)
+        
+        if queryset.exists():
+            return Response({'error': 'Category already exists'}, status=status.HTTP_409_CONFLICT)
+
+        new_category = Category(name=category_name, user_id=user_id)  
+        new_category.save();  
+
+        return Response({'message': 'Category added'}, status=status.HTTP_201_CREATED)
+        

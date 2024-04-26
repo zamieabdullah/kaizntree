@@ -23,6 +23,7 @@ class User(models.Model):
 
 class Category(models.Model):
     name = models.CharField(max_length=100)
+    user = models.ForeignKey(User, on_delete=models.CASCADE, null=True)
 
 class Tag(models.Model):
     name = models.CharField(max_length=100)
@@ -35,5 +36,9 @@ class Item(models.Model):
     in_stock = models.DecimalField(max_digits=10, decimal_places=3)
     available_stock = models.DecimalField(max_digits=10, decimal_places=3)
     owner = models.ForeignKey(User, on_delete=models.CASCADE)
+    units = models.CharField(max_length=100, null=True)
+    minimum_stock = models.DecimalField(max_digits=10, decimal_places=3, null=True)
+    desired_stock = models.DecimalField(max_digits=10, decimal_places=3, null=True)
+    cost = models.DecimalField(max_digits=10, decimal_places=3, null=True)
     created_at = models.DateTimeField(default=datetime.now)
     updated_at = models.DateTimeField(default=datetime.now)

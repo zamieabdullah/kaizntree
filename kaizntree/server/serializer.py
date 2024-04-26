@@ -18,6 +18,7 @@ class CategorySerializer(ModelSerializer):
         fields = (
             'id',
             'name',
+            'user',
         )
         
 class TagSerializer(ModelSerializer):
@@ -39,6 +40,10 @@ class ItemSerializer(ModelSerializer):
             'in_stock',
             'available_stock',
             'owner',
+            'units',
+            'minimum_stock',
+            'desired_stock',
+            'cost',
             'created_at',
             'updated_at',
         )
