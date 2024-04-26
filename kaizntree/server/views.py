@@ -7,9 +7,8 @@ from datetime import datetime, timedelta
 from rest_framework_simplejwt.tokens import AccessToken
 from jwt.exceptions import InvalidTokenError
 
-from .utils import obtain_jwt_tokens
-from .models import User, Category, Tag, Item
-from .serializer import UserSerializer, CategorySerializer, TagSerializer, ItemSerializer
+from .models import User, Category, Item
+from .serializer import UserSerializer, CategorySerializer, ItemSerializer
 
 class UserInfoAPIView(APIView):
     def post(self, request):
@@ -111,8 +110,50 @@ class UserCategoryAPIView(APIView):
         if queryset.exists():
             return Response({'error': 'Category already exists'}, status=status.HTTP_409_CONFLICT)
 
-        new_category = Category(name=category_name, user_id=user_id)  
+        new_category = Category(name=category_name, user=user_id)  
         new_category.save();  
 
         return Response({'message': 'Category added'}, status=status.HTTP_201_CREATED)
+    
+class UserItemsAPIView(APIView):
+    def get_user_id_from_token(self, request):
+        try:
+            # Extract the JWT token from the request headers
+            authorization_header = request.headers.get('CSRFToken')
+            token = authorization_header.split()[1]  # Extract token from "Bearer <token>"
+            
+            # Decode the JWT token
+            decoded_token = AccessToken(token)
+            user_id = decoded_token['user_id']
+            
+            return user_id
+        except (IndexError, InvalidTokenError, KeyError):
+            # Handle token extraction or decoding errors
+            return None
+        
+    def get(self, request):
+        user_id = self.get_user_id_from_token(request)
+        if not user_id:
+            return Response({'error': 'User ID is missing in the JWT token'}, status=status.HTTP_400_BAD_REQUEST)
+        
+        queryset = Item.objects.filter(owner=user_id)
+        serializer = ItemSerializer(queryset, many=True)
+        return Response(serializer.data, status=status.HTTP_200_OK)
+        
+    def post(self, request):
+        user_id = self.get_user_id_from_token(request)
+        if not user_id:
+            return Response({'error': 'User ID is missing in the JWT token'}, status=status.HTTP_400_BAD_REQUEST)
+        
+        if Item.objects.filter(owner=user_id, sku=request.data["sku"]).exists():
+            return Response({'error': 'This item already exists'}, status=status.HTTP_409_CONFLICT)
+        
+        data = request.data
+
+        category_name = data.pop('category')
+        category = Category.objects.get(name=category_name, user_id=user_id)
+        item = Item(category=category, owner_id=user_id, **data)
+        item.save()
+
+        return Response(status=status.HTTP_201_CREATED)
         

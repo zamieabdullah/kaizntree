@@ -1,6 +1,6 @@
-from rest_framework.serializers import ModelSerializer
+from rest_framework.serializers import ModelSerializer, SerializerMethodField
 
-from .models import User, Category, Tag, Item
+from .models import User, Category, Item
 
 class UserSerializer(ModelSerializer):
     class Meta:
@@ -21,22 +21,16 @@ class CategorySerializer(ModelSerializer):
             'user',
         )
         
-class TagSerializer(ModelSerializer):
-    class Meta:
-        model = Tag
-        fields = (
-            'id',
-            'name',
-        )
-        
 class ItemSerializer(ModelSerializer):
+    category_name = SerializerMethodField()
+
     class Meta:
         model = Item
         fields = (
             'id',
             'sku',
-            'category',
-            'tags',
+            'name',
+            'category_name',
             'in_stock',
             'available_stock',
             'owner',
@@ -47,3 +41,6 @@ class ItemSerializer(ModelSerializer):
             'created_at',
             'updated_at',
         )
+
+    def get_category_name(self, obj):
+        return obj.category.name

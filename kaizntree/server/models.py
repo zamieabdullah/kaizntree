@@ -22,17 +22,13 @@ class User(models.Model):
         return check_password(original, self.password)
 
 class Category(models.Model):
-    name = models.CharField(max_length=100)
+    name = models.CharField(max_length=100, unique=True)
     user = models.ForeignKey(User, on_delete=models.CASCADE, null=True)
-
-class Tag(models.Model):
-    name = models.CharField(max_length=100)
 
 class Item(models.Model):
     sku = models.CharField(max_length=100, unique=True)
     name = models.CharField(max_length=100)
     category = models.ForeignKey(Category, on_delete=models.CASCADE)
-    tags = models.ManyToManyField(Tag)
     in_stock = models.DecimalField(max_digits=10, decimal_places=3)
     available_stock = models.DecimalField(max_digits=10, decimal_places=3)
     owner = models.ForeignKey(User, on_delete=models.CASCADE)
