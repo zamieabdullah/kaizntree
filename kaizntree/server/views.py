@@ -105,12 +105,12 @@ class UserCategoryAPIView(APIView):
         if not user_id:
             return Response({'error': 'User ID is missing in the JWT token'}, status=status.HTTP_400_BAD_REQUEST)
         category_name = request.data.get('name')
-        queryset = Category.objects.filter(user=user_id, name=category_name)
+        queryset = Category.objects.filter(user_id=user_id, name=category_name)
         
         if queryset.exists():
             return Response({'error': 'Category already exists'}, status=status.HTTP_409_CONFLICT)
 
-        new_category = Category(name=category_name, user=user_id)  
+        new_category = Category(name=category_name, user_id=user_id)  
         new_category.save();  
 
         return Response({'message': 'Category added'}, status=status.HTTP_201_CREATED)
