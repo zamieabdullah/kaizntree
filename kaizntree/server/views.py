@@ -71,7 +71,7 @@ class UserRegisterAPIView(APIView):
             return response
 
 
-        return Response({'message': 'server error'},status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+        return Response({'error': 'Server error'},status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
 class UserCategoryAPIView(APIView):
     def get_user_id_from_token(self, request):
