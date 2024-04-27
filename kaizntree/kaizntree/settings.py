@@ -109,7 +109,14 @@ WSGI_APPLICATION = 'kaizntree.wsgi.application'
 
 database_url = os.environ.get('DATABASE_URL')
 DATABASES = {
-    'default': dj_database_url.parse(database_url)
+    'default': {
+        'ENGINE': 'django.db.backends.postgresql_psycopg2',
+        'NAME': os.environ.get('DATABASE_NAME'),
+        'USER': os.environ.get('DATABASE_USER'),
+        'PASSWORD': os.environ.get('DATABASE_PASSWORD'),
+        'HOST': os.environ.get('DATABASE_HOST'),
+        'PORT': '5432'
+    }
 }
 # DATABASES["default"] = dj_database_url.parse(database_url)
 
