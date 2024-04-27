@@ -11,8 +11,10 @@ https://docs.djangoproject.com/en/5.0/ref/settings/
 """
 
 from pathlib import Path
+import dj_database_url
 import environ
 import datetime
+import os
 env = environ.Env()
 environ.Env.read_env()
 
@@ -24,8 +26,8 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 # See https://docs.djangoproject.com/en/5.0/howto/deployment/checklist/
 
 # SECURITY WARNING: keep the secret key used in production secret!
-SECRET_KEY = 'django-insecure-+nk!(*h@ykg+2ki5sbu8)gbvkf+c8r_b3(v0_4cgi@5es^-3fx'
-
+SECRET_KEY = os.environ.get('SECRET_KEY')
+# 'django-insecure-+nk!(*h@ykg+2ki5sbu8)gbvkf+c8r_b3(v0_4cgi@5es^-3fx'
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
@@ -115,6 +117,9 @@ DATABASES = {
         'PORT': '5432'
     }
 }
+
+database_url = os.environ.get('DATABASE_URL')
+DATABASES["default"] = dj_database_url.parse(database_url)
 
 
 # Password validation
